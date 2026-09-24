@@ -1,5 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "installCommand": "npm install",
   "buildCommand": "npm run build",
@@ -10,7 +9,7 @@
     "api/cron/ops.js": { "maxDuration": 60, "includeFiles": "server/db/*.sql" }
   },
   "rewrites": [
-    { "source": "/api/:wfhpath((?!health$|index$|cron/).*)", "destination": "/api/index" },
+    { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [
