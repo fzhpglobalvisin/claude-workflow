@@ -1,0 +1,107 @@
+az_workflow_hub/
+├── 📁 api
+│   └── 📄 index.js
+├── 📁 data
+│   ├── 📄 .jwt_secret
+│   └── 📄 workflow.db
+├── 📁 docs
+│   └── 📄 ARCHITECTURE.md
+├── 📁 public
+│   ├── 📄 amazon.csv
+│   ├── 📄 icon.svg
+│   ├── 📄 manifest.webmanifest
+│   ├── 📄 README.md
+│   └── 📄 sw.js
+├── 📁 server
+│   ├── 📁 db
+│   │   ├── 📄 index.js
+│   │   ├── 📄 schema.sql
+│   │   └── 📄 seed.js
+│   ├── 📁 lib
+│   │   ├── 📄 access.js
+│   │   ├── 📄 chatcore.js
+│   │   ├── 📄 events.js
+│   │   ├── 📄 http.js
+│   │   ├── 📄 realtime.js
+│   │   └── 📄 security.js
+│   ├── 📁 services
+│   │   ├── 📄 admin.js
+│   │   ├── 📄 ai.js
+│   │   ├── 📄 auth.js
+│   │   ├── 📄 boards.js
+│   │   ├── 📄 chat.js
+│   │   ├── 📄 ops.js
+│   │   ├── 📄 org.js
+│   │   ├── 📄 reports.js
+│   │   ├── 📄 search.js
+│   │   └── 📄 tasks.js
+│   ├── 📁 tests
+│   │   └── 📄 api.test.js
+│   └── 📄 index.js
+├── 📁 src
+│   ├── 📁 assets
+│   │   ├── 📄 logo.svg
+│   │   └── 📄 README.md
+│   ├── 📁 components
+│   │   ├── 📄 CardModal.jsx
+│   │   ├── 📄 Charts.jsx
+│   │   ├── 📄 Chat.jsx
+│   │   ├── 📄 CreateModal.jsx
+│   │   ├── 📄 Dashboard.tsx
+│   │   ├── 📄 DataTable.tsx
+│   │   ├── 📄 DynamicRechart.tsx
+│   │   ├── 📄 ExcelGrid.tsx
+│   │   ├── 📄 FileUpload.tsx
+│   │   ├── 📄 icons.js
+│   │   ├── 📄 README.md
+│   │   ├── 📄 RichText.jsx
+│   │   ├── 📄 SettingsModal.jsx
+│   │   ├── 📄 TableauCanvas.tsx
+│   │   ├── 📄 TopBar.jsx
+│   │   ├── 📄 ui.jsx
+│   │   └── 📄 VoiceAssistant.tsx
+│   ├── 📁 hooks
+│   │   ├── 📄 README.md
+│   │   └── 📄 useGemini.ts
+│   ├── 📁 lib
+│   │   ├── 📄 ai.ts
+│   │   ├── 📄 aiModeling.ts
+│   │   ├── 📄 api.js
+│   │   ├── 📄 format.js
+│   │   ├── 📄 README.md
+│   │   ├── 📄 realtime.js
+│   │   ├── 📄 router.jsx
+│   │   ├── 📄 store.jsx
+│   │   ├── 📄 tableauCopilot.ts
+│   │   └── 📄 utils.ts
+│   ├── 📁 pages
+│   │   ├── 📄 AdminPage.jsx
+│   │   ├── 📄 AiCrew.jsx
+│   │   ├── 📄 Architecture.jsx
+│   │   ├── 📄 BoardPage.jsx
+│   │   ├── 📄 ChatPage.jsx
+│   │   ├── 📄 CompanyHome.jsx
+│   │   ├── 📄 CompanyHub.jsx
+│   │   ├── 📄 Dashboard.jsx
+│   │   ├── 📄 Login.jsx
+│   │   ├── 📄 OpsPage.jsx
+│   │   └── 📄 Reports.jsx
+│   ├── 📄 App.jsx
+│   ├── 📄 App.tsx
+│   ├── 📄 index.css
+│   ├── 📄 main.jsx
+│   ├── 📄 main.tsx
+│   ├── 📄 README.md
+│   ├── 📄 styles.css
+│   └── 📄 vite-env.d.ts
+├── 📄 .env.example
+├── 📄 .gitignore
+├── 📄 index.html
+├── 📄 package copy.json
+├── 📄 package.json
+├── 📄 README.md
+├── 📄 structure.js
+├── 📄 tsconfig.json
+├── 📄 vercel.json
+├── 📄 vite.config.js
+└── 📄 vite.config.ts

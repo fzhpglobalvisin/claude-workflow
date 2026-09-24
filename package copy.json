@@ -1,0 +1,30 @@
+{
+  "name": "workflow-hub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Enterprise workflow management: Trello-style Kanban, Slack-style channels, AI crew agents, pipelines, RBAC, audit and reports on SQLite",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --watch-path=server server/index.js",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning server/index.js",
+    "seed": "node --disable-warning=ExperimentalWarning server/db/seed.js --reset",
+    "test": "node --disable-warning=ExperimentalWarning server/tests/api.test.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-icons": "^5.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.0",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.14",
+    "vite": "^6.4.3"
+  }
+}

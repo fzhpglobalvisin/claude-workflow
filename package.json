@@ -1,0 +1,42 @@
+{
+  "name": "workflow-hub",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Enterprise workflow management: Trello-style Kanban, Slack-style channels, AI crew agents, pipelines, RBAC, audit and reports. SQLite locally, PostgreSQL on Vercel.",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "nodemon --watch server --exec \"node --env-file-if-exists=.env --no-warnings server/index.js\"",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "node --env-file-if-exists=.env --no-warnings server/index.js",
+    "db:migrate": "node --env-file-if-exists=.env --no-warnings server/db/cli.js migrate",
+    "db:seed": "node --env-file-if-exists=.env --no-warnings server/db/cli.js seed",
+    "db:push": "node --env-file-if-exists=.env --no-warnings server/db/cli.js push",
+    "db:pull": "node --env-file-if-exists=.env --no-warnings server/db/cli.js pull",
+    "db:status": "node --env-file-if-exists=.env --no-warnings server/db/cli.js status",
+    "db:tag": "node --env-file-if-exists=.env --no-warnings server/db/cli.js tag",
+    "seed": "npm run db:seed",
+    "test": "node --no-warnings server/tests/api.test.js",
+    "test:vercel": "node --no-warnings server/tests/vercel.test.js",
+    "test:mdm": "node --no-warnings server/tests/mdm.test.js",
+    "test:env": "node --no-warnings server/tests/env.test.js",
+    "test:all": "npm test && npm run test:mdm && npm run test:env"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "@vercel/functions": "^3.9.0",
+    "pg": "^8.13.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-icons": "^5.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.0",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.14",
+    "vite": "^6.4.3"
+  }
+}
