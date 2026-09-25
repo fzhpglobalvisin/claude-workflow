@@ -51,13 +51,15 @@ export const PERMISSIONS = {
   'ops.view': 'View pipelines, metrics and alerts', 'ops.run': 'Trigger pipelines', 'ops.manage': 'Create and edit pipelines',
   'alert.manage': 'Acknowledge / resolve alerts', 'ai.run': 'Run AI crew agents', 'ai.manage': 'Configure AI agents',
   'admin.users': 'Manage users', 'admin.roles': 'Manage roles & permissions', 'audit.view': 'View the audit trail',
+  'cover.manage': 'Set cover images on boards and tasks',
 };
 export const ROLES = {
   super_admin: ['Full control of auth, access rights and data', Object.keys(PERMISSIONS)],
-  admin: ['Company administrator', Object.keys(PERMISSIONS).filter((k) => k !== 'admin.roles')],
+  admin: ['Company administrator', Object.keys(PERMISSIONS).filter((k) => k !== 'admin.roles' && k !== 'cover.manage')],
   manager: ['Delivery / engineering manager', ['unit.manage', 'project.manage', 'board.create', 'board.manage', 'board.members', 'card.create', 'card.edit', 'card.delete', 'chat.post', 'chat.channel.create', 'report.view', 'report.build', 'ops.view', 'ops.run', 'alert.manage', 'ai.run', 'audit.view']],
   developer: ['Engineer, designer, QA', ['card.create', 'card.edit', 'chat.post', 'chat.channel.create', 'report.view', 'ops.view', 'ai.run']],
   guest: ['Client or external collaborator', ['chat.post']],
+  sales_marketing: ['Sales & marketing — boards, tasks and their cover images', ['board.create', 'card.create', 'card.edit', 'chat.post', 'chat.channel.create', 'report.view', 'report.build', 'ai.run', 'cover.manage']],
 };
 
 const USERS = [
@@ -74,7 +76,11 @@ const USERS = [
   ['ayesha', 'Ayesha Siddiqui', 'manager', 'Business Analyst', 'Client Services', '#84cc16'],
   ['zain', 'Zain Malik', 'developer', 'Frontend Engineer (React)', 'Engineering', '#06b6d4'],
   ['nate', 'Nate Paul', 'guest', 'Client — Zenara Peptides', 'External', '#64748b'],
+  ['hamza', 'Hamza Sheikh', 'sales_marketing', 'Marketing Lead', 'Sales & Marketing', '#f43f5e'],
 ];
+
+// tile covers for the seeded units (Superadmin can change them with a link)
+const UNIT_COVERS = ['1518770660439-4636190af475', '1558655146-9f40138edfeb', '1551288049-bebda4e38f71', '1460925895917-afdab827c52f', '1560518883-ce09059eeffa', '1498050108023-c5249f4df085'];
 
 const COMPANIES = [
   ['OmniSphere Enterprise', 'OSE', IMG('1464822759023-fed622ff2c3b'), 'Enterprise ERP & analytics programs', '#f59e0b'],
@@ -139,7 +145,8 @@ function seedInner({ reset, quiet }) {
     for (const [code, units] of Object.entries(UNITS)) {
       units.forEach(([name, type], i) => {
         const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        W[`${code}:${name}`] = insert('az_workspace', { id: uuid(), name, slug, type, invite_code: `${code}-${slug.slice(0, 4).toUpperCase()}${i}`, company_id: C[code].id, description: `${name} — ${C[code].name}`, created_at: ago(110 - i), updated_at: ago(20) });
+        const cover = UNIT_COVERS[(Object.keys(W).length) % UNIT_COVERS.length];
+        W[`${code}:${name}`] = insert('az_workspace', { id: uuid(), name, slug, type, invite_code: `${code}-${slug.slice(0, 4).toUpperCase()}${i}`, company_id: C[code].id, description: `${name} — ${C[code].name}`, cover_url: IMG(cover, 800), created_at: ago(110 - i), updated_at: ago(20) });
       });
     }
     const unitMembers = {
@@ -195,6 +202,8 @@ function seedInner({ reset, quiet }) {
     makeBoard('ai', { unit: 'ZVL:Engineering', project: 'AI Business Strategy Advisor', title: 'AI Board Development', description: 'Azam’s AI initiatives — strategy advisor, real-estate AI, task management.', background: IMG('1535223289827-42f1e9919769', 1920), lists: [['AZAM UNCLE TASKS'], ['PROGRESS 🖌️'], ['ON REVIEW 😵'], ['COMPLETED 👍', 1]], members: { azam: 'admin', fatima: 'admin', maria: 'member', mansoor: 'member', hina: 'member', usman: 'member', sara: 'member', zain: 'member' }, createdDaysAgo: 75 });
     makeBoard('zenara', { unit: 'ZVL:Engineering', project: 'Zenara Peptides Mobile App', title: 'Zenara Mobile App', description: 'Sprint board for the Zenara Peptides Flutter app.', background: IMG('1512941937669-90a1b58e7e9c', 1920), lists: [['Backlog'], ['Sprint To Do'], ['In Progress'], ['Code Review'], ['QA'], ['Released', 1]], members: { mansoor: 'admin', fatima: 'admin', azam: 'member', maria: 'member', usman: 'member', sara: 'member', nate: 'viewer' }, createdDaysAgo: 45 });
     makeBoard('hub', { unit: 'ZVL:Engineering', project: 'Workflow Hub (internal)', title: 'Workflow Hub Product', description: 'Roadmap and delivery of our internal workflow platform.', background: IMG('1498050108023-c5249f4df085', 1920), lists: STD, members: { fatima: 'admin', zain: 'member', usman: 'member', hina: 'member', sara: 'member', bilal: 'member', azam: 'member' }, createdDaysAgo: 90 });
+    // Sales & marketing lead: member of the product boards (sets board / task covers)
+    for (const k of ['ai', 'hub']) insert('az_board_member', { id: uuid(), board_id: B[k].id, user_id: U.hamza.id, role: 'member', created_at: ago(20) });
     makeBoard('design', { unit: 'ZVL:Design Studio', project: 'Brand & UI Kits', title: 'Design Requests', description: 'Intake board for design work.', background: IMG('1558655146-9f40138edfeb', 1920), lists: [['Requests'], ['Designing'], ['Client Feedback'], ['Approved', 1]], members: { maria: 'admin', zain: 'member', fatima: 'member', azam: 'viewer' }, createdDaysAgo: 80 });
     makeBoard('ops', { unit: 'ZVL:DevOps & Cloud', project: 'Infrastructure & Incidents', title: 'Ops & Incidents', description: 'CI/CD, monitoring work and incident response (AI crew files incidents here).', background: IMG('1518770660439-4636190af475', 1920), lists: [['Triage'], ['Investigating'], ['Mitigated'], ['Resolved', 1]], members: { bilal: 'admin', usman: 'member', fatima: 'member', azam: 'member' }, createdDaysAgo: 100 });
     makeBoard('woo', { unit: 'ZVL:Client Services', project: 'WooCommerce Storefronts', title: 'WooCommerce Client Sites', description: 'Builds, fixes and retainers for WooCommerce clients.', background: IMG('1460925895917-afdab827c52f', 1920), lists: [['Incoming'], ['Building'], ['Client Review'], ['Live', 1]], members: { omar: 'admin', ayesha: 'admin', maria: 'member', sara: 'member', azam: 'member' }, createdDaysAgo: 70 });

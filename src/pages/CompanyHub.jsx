@@ -9,6 +9,7 @@ import { SettingsModal } from '../components/SettingsModal.jsx';
 import { ISettings, IBuilding, ISearch, IPlus, IEdit, IArchive, ILogout, IArrow, IUser } from '../components/icons.js';
 import { cls } from '../lib/format.js';
 import { VersionPanel, useRetirePrompt, withReason } from '../components/VersionHistory.jsx';
+import { CoverButton } from '../components/CoverPicker.jsx';
 
 export default function CompanyHub() {
   const { user, setCompanyId, can, logout, isSuper, toast } = useApp();
@@ -70,6 +71,7 @@ export default function CompanyHub() {
               {editing ? (
                 <span className="cc-edit">
                   <button className="btn sm" onClick={(e) => { e.stopPropagation(); setForm(c); }}><IEdit /> Edit</button>
+                  <CoverButton entity="company" id={c.id} url={c.image_url} title={c.name} label="Cover" onSaved={reload} />
                   {isSuper && <button className="btn sm warn" title="Retire company" onClick={(e) => { e.stopPropagation(); retireCompany(c); }}><IArchive /></button>}
                 </span>
               ) : <span className="cc-enter">Enter Company <IArrow /></span>}
@@ -94,7 +96,7 @@ export default function CompanyHub() {
 }
 
 function CompanyForm({ company, onClose, onSaved }) {
-  const { toast } = useApp();
+  const { toast, isSuper } = useApp();
   const [f, setF] = useState({ name: company.name || '', code: company.code || '', description: company.description || '', image_url: company.image_url || '', accent: company.accent || '#579dff', change_note: '' });
   const [err, setErr] = useState(null);
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -114,7 +116,7 @@ function CompanyForm({ company, onClose, onSaved }) {
         <div className="row2"><Field label="Name"><input required value={f.name} onChange={set('name')} /></Field>
           <Field label="Code" hint={company.id ? 'Permanent business key — cannot change' : '2–6 letters, permanent (never reused)'}><input required maxLength={6} value={f.code} onChange={set('code')} disabled={!!company.id} /></Field></div>
         <Field label="Description"><input value={f.description} onChange={set('description')} /></Field>
-        <Field label="Card image URL" hint="Unsplash / Google Drive image link"><input value={f.image_url} onChange={set('image_url')} /></Field>
+        <Field label="Cover image link" hint={isSuper ? 'Any public image link — Unsplash, Google Drive, Dropbox…' : 'Set by the Superadmin'}><input value={f.image_url} onChange={set('image_url')} disabled={!isSuper} /></Field>
         <Field label="Accent colour"><input type="color" value={f.accent} onChange={set('accent')} /></Field>
         {company.id && <Field label="Reason for this change" hint="Saved on the new version"><input value={f.change_note} onChange={set('change_note')} placeholder="e.g. Rebrand approved by the board" /></Field>}
         {err && <div className="error-box">{err}</div>}

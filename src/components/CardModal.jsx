@@ -13,6 +13,7 @@ import {
   IChat, IPin, IEye, IExternal, ITag, IClock, IUser, IFlag, ITimer, IBoard,
 } from './icons.js';
 import { VersionPanel, RetireButton } from './VersionHistory.jsx';
+import { CoverModal, useCoverRights } from './CoverPicker.jsx';
 
 const REQ_ICON = { text: <IFile />, pdf: <IFile />, media: <IFilm />, link: <ILink /> };
 const LABEL_COLORS = ['#4bce97', '#f5cd47', '#fea362', '#f87168', '#9f8fef', '#579dff', '#6cc3e0', '#94c748', '#e774bb'];
@@ -25,6 +26,8 @@ export function CardModal({ cardId, onClose }) {
   const [busyAi, setBusyAi] = useState(null);
   const [preview, setPreview] = useState(null);
   const [confirm, confirmNode] = useConfirm();
+  const [coverEdit, setCoverEdit] = useState(false);
+  const coverRights = useCoverRights();
 
   const load = useCallback(() => GET(`/api/cards/${cardId}`).then((x) => { setD(x); setError(null); }).catch(setError), [cardId]);
   useEffect(() => { setD(null); load(); }, [load]);
@@ -60,7 +63,8 @@ export function CardModal({ cardId, onClose }) {
 
   return (
     <Modal bare onClose={onClose} width={960} className="card-modal">
-      {card.cover_url && <div className="cm-cover" style={{ backgroundImage: `url("${card.cover_url}")` }}>{edit && <button className="btn sm" onClick={() => patchCard({ cover_url: null })}>Remove cover</button>}</div>}
+      {card.cover_url && <div className="cm-cover" style={{ backgroundImage: `url("${card.cover_url}")` }}>{edit && coverRights.card && (
+        <span className="cover-actions"><button className="btn sm" onClick={() => setCoverEdit(true)}>Change cover</button><button className="btn sm" onClick={() => patchCard({ cover_url: null })}>Remove cover</button></span>)}</div>}
       <button className="icon-btn cm-close" onClick={onClose} aria-label="Close"><IX /></button>
       <div className="cm-head">
         <IBoard className="cm-icon" />
@@ -116,7 +120,7 @@ export function CardModal({ cardId, onClose }) {
 
           <section className="cm-sec">
             <h4><IClip /> Attachments <span className="muted">{d.attachments.length}</span><span className="muted small">Google Drive links</span></h4>
-            <Attachments card={card} items={d.attachments} edit={edit} reload={load} onPreview={setPreview} onCover={(url) => patchCard({ cover_url: url })} />
+            <Attachments card={card} items={d.attachments} edit={edit} reload={load} onPreview={setPreview} onCover={coverRights.card ? (url) => patchCard({ cover_url: url }) : null} />
           </section>
 
           <section className="cm-sec">
@@ -152,6 +156,7 @@ export function CardModal({ cardId, onClose }) {
           <div className="side-group">
             <h5>Actions</h5>
             {d.board && <button className="btn block" onClick={shareToChat}><IChat /> Discuss in board chat</button>}
+            {edit && coverRights.card && <button className="btn block" onClick={() => setCoverEdit(true)}><IImage /> {card.cover_url ? 'Change cover' : 'Cover image'}</button>}
             {d.board && <button className="btn block" onClick={copy}><ICopy /> {card.is_template ? 'Create from template' : 'Copy'}</button>}
             {edit && <button className="btn block" onClick={() => patchCard({ is_template: !card.is_template })}><IPin /> {card.is_template ? 'Unmark template' : 'Make template'}</button>}
             {edit && <button className="btn block" onClick={() => { patchCard({ archived: true }); toast('Archived'); onClose(); }}><IArchive /> Archive</button>}
@@ -175,6 +180,7 @@ export function CardModal({ cardId, onClose }) {
         </aside>
       </div>
       {preview && <PreviewModal item={preview} onClose={() => setPreview(null)} />}
+      {coverEdit && <CoverModal entity="card" id={card.id} url={card.cover_url} title={card.doc_no || card.title} onClose={() => setCoverEdit(false)} onSaved={() => load()} />}
       {confirmNode}
     </Modal>
   );
@@ -323,7 +329,7 @@ function Attachments({ card, items, edit, reload, onPreview, onCover }) {
               <a href={a.drive_web_view_link || a.url} target="_blank" rel="noreferrer"><strong>{a.name}</strong></a>
               <small className="muted">{a.uploader} · <TimeAgo iso={a.created_at} />{a.file_size ? ` · ${fileSize(a.file_size)}` : ''}</small>
               <span className="row-inline">
-                {edit && a.drive_thumbnail_link && <button className="link" onClick={() => onCover(a.drive_thumbnail_link)}>Make cover</button>}
+                {edit && onCover && a.drive_thumbnail_link && <button className="link" onClick={() => onCover(a.drive_thumbnail_link)}>Make cover</button>}
                 {edit && <button className="link danger" onClick={async () => { await DEL(`/api/attachments/${a.id}`); reload(); }}>Remove</button>}
               </span>
             </div>

@@ -54,7 +54,11 @@ export function Modal({ open = true, onClose, title, children, width = 560, clas
     </div>, document.body);
 }
 
-/** Popover anchored to its trigger. */
+/**
+ * Popover anchored to its trigger. It opens below the trigger, or ABOVE it when there is more
+ * room there (e.g. the bottom board dock → "Switch boards"), and its height is capped to the
+ * space available so the content scrolls instead of running off-screen.
+ */
 export function Popover({ trigger, children, align = 'right', width = 320, open: controlled, onOpenChange, className }) {
   const [inner, setInner] = useState(false);
   const open = controlled ?? inner;
@@ -63,12 +67,27 @@ export function Popover({ trigger, children, align = 'right', width = 320, open:
   const pop = useRef(null);
   const [pos, setPos] = useState(null);
   useLayoutEffect(() => {
-    if (!open || !ref.current) return;
-    const r = ref.current.getBoundingClientRect();
-    const w = Math.min(width, window.innerWidth - 16);
-    let left = align === 'right' ? r.right - w : r.left;
-    left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
-    setPos({ top: r.bottom + 6, left, width: w });
+    if (!open || !ref.current) return undefined;
+    const place = () => {
+      if (!ref.current) return;
+      const r = ref.current.getBoundingClientRect();
+      const vw = window.innerWidth; const vh = window.innerHeight;
+      const w = Math.min(width, vw - 16);
+      let left = align === 'right' ? r.right - w : r.left;
+      left = Math.max(8, Math.min(left, vw - w - 8));
+      const below = vh - r.bottom - 14;   // free space under the trigger
+      const above = r.top - 14;           // free space over the trigger
+      const wanted = Math.min(560, vh * 0.7);
+      if (below >= Math.min(wanted, 260) || below >= above) {
+        setPos({ top: r.bottom + 6, left, width: w, maxHeight: Math.max(120, Math.min(wanted, below)) });
+      } else {
+        setPos({ bottom: vh - r.top + 6, left, width: w, maxHeight: Math.max(120, Math.min(wanted, above)) });
+      }
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => { window.removeEventListener('resize', place); window.removeEventListener('scroll', place, true); };
   }, [open, align, width]);
   useEffect(() => {
     if (!open) return undefined;
@@ -81,7 +100,8 @@ export function Popover({ trigger, children, align = 'right', width = 320, open:
     <>
       <span ref={ref} className="popover-anchor" onClick={() => setOpen(!open)}>{trigger}</span>
       {open && pos && createPortal(
-        <div ref={pop} className={cls('popover', className)} style={{ top: pos.top, left: pos.left, width: pos.width }}>
+        <div ref={pop} className={cls('popover', className, pos.bottom != null && 'above')}
+          style={{ top: pos.top, bottom: pos.bottom, left: pos.left, width: pos.width, maxHeight: pos.maxHeight }}>
           {typeof children === 'function' ? children(() => setOpen(false)) : children}
         </div>, document.body)}
     </>

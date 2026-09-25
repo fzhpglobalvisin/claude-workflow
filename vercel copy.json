@@ -1,0 +1,22 @@
+{
+  "framework": "vite",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/index.js": { "maxDuration": 60, "includeFiles": "server/db/*.sql" },
+    "api/health.js": { "maxDuration": 30, "includeFiles": "server/db/*.sql" },
+    "api/cron/ops.js": { "maxDuration": 60, "includeFiles": "server/db/*.sql" }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    { "source": "/api/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
+  ],
+  "crons": [
+    { "path": "/api/cron/ops", "schedule": "0 3 * * *" }
+  ]
+}

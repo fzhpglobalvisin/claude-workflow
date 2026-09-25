@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS az_workspace (           -- "Unit"
   invite_code TEXT,
   company_id TEXT NOT NULL REFERENCES az_company(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
   description TEXT,
+  cover_url TEXT,                                   -- tile cover image (link) — Superadmin
   created_at TEXT, updated_at TEXT
 );
 CREATE TABLE IF NOT EXISTS az_workspace_member (
@@ -114,6 +115,7 @@ CREATE TABLE IF NOT EXISTS az_board (
   project_id TEXT REFERENCES az_project(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED,
   log_channel_id TEXT,
   background TEXT,
+  cover_url TEXT,                                   -- tile cover image (link) — cover.manage
   created_by TEXT REFERENCES users(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED,
   created_at TEXT, updated_at TEXT
 );

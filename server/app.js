@@ -21,10 +21,11 @@ import * as ai from './services/ai.js';
 import * as ops from './services/ops.js';
 import * as admin from './services/admin.js';
 import * as mdm from './services/mdm.js';
+import * as covers from './services/covers.js';
 import { checkEnvironment, APP_ENV, IS_PRODUCTION } from './lib/environment.js';
 import { maybeApplyEffectiveDates } from './lib/mdm.js';
 
-export const SERVICES = { auth, org, boards, tasks, chat, search, reports, ai, ops, admin, mdm };
+export const SERVICES = { auth, org, boards, tasks, chat, search, reports, ai, ops, admin, mdm, covers };
 export const router = new Router();
 for (const mod of Object.values(SERVICES)) mod.register(router);
 
@@ -50,6 +51,10 @@ export function init() {
           const { bootstrapEmpty } = await import('./db/bootstrap.js');
           await bootstrapEmpty();
         }
+      } else {
+        const { ensureRbacCatalogue } = await import('./db/bootstrap.js');
+        // adds new permissions / standard roles to existing databases (a parallel cold start may win the race — fine)
+        await ensureRbacCatalogue().catch((e) => console.warn('[rbac catalogue]', e.message));
       }
     })();
     readyPromise.catch(() => { readyPromise = null; });

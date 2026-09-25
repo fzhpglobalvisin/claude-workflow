@@ -254,6 +254,33 @@ try {
     assert.equal(integ.ok, true, JSON.stringify(integ.checks.filter((c) => c.count && c.level === 'error')));
   });
 
+  await test('cover images: Superadmin → company/unit, cover.manage (sales_marketing) → board/task', async () => {
+    const hamza = await login('hamza');
+    const home = (await api('GET', `/api/companies/${zvl.id}`, null, admin)).data;
+    const unitId = home.units[0].id;
+    const t = (await api('GET', `/api/boards/${aiBoard.id}`, null, azam)).data.cards[0];
+    const img = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800';
+    // managers / admins without the permission are refused
+    assert.equal((await api('PUT', `/api/covers/card/${t.id}`, { url: img }, azam)).status, 403);
+    assert.equal((await api('PATCH', `/api/cards/${t.id}`, { cover_url: img }, azam)).status, 403);
+    assert.equal((await api('PUT', `/api/covers/unit/${unitId}`, { url: img }, hamza)).status, 403);
+    assert.equal((await api('PUT', `/api/covers/company/${zvl.id}`, { url: img }, hamza)).status, 403);
+    // sales & marketing sets board + task covers (Drive share links become direct image links)
+    const bc = await api('PUT', `/api/covers/board/${aiBoard.id}`, { url: 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOp/view?usp=sharing' }, hamza);
+    assert.equal(bc.status, 200); assert.equal(bc.data.cover_url, 'https://drive.google.com/thumbnail?id=1AbCdEfGhIjKlMnOp&sz=w1600');
+    assert.equal((await api('PUT', `/api/covers/card/${t.id}`, { url: img }, hamza)).status, 200);
+    assert.equal((await api('PUT', `/api/covers/card/${t.id}`, { url: 'javascript:alert(1)' }, hamza)).status, 400);
+    // Superadmin sets unit + company covers
+    assert.equal((await api('PUT', `/api/covers/unit/${unitId}`, { url: img }, admin)).data.cover_url, img);
+    assert.equal((await api('PUT', `/api/covers/company/${zvl.id}`, { url: img }, admin)).data.cover_url, img);
+    // every cover change is a version on the record
+    const h = (await api('GET', `/api/versions/card/${t.id}`, null, azam)).data;
+    assert.equal(h.versions[0].change_note, 'Cover image changed'); assert.ok(h.versions[0].changes.some((c) => c.field === 'cover_url'));
+    const b = (await api('GET', `/api/companies/${zvl.id}`, null, admin)).data;
+    assert.equal(b.units.find((u) => u.id === unitId).cover_url, img);
+    assert.ok(b.boards.find((x) => x.id === aiBoard.id).cover_url.startsWith('https://drive.google.com/thumbnail'));
+  });
+
   await test('seeded demo history is attributed to real people', async () => {
     const adv = board.cards.find((c) => c.title === 'AI Business Strategy Advisor');
     const h = (await api('GET', `/api/versions/card/${adv.id}`, null, azam)).data;

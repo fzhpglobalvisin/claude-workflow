@@ -2,7 +2,7 @@
 import { get, all, run, insert, update, uuid, now, tx, j } from '../db/index.js';
 import { bad, notFound, forbidden, str, oneOf } from '../lib/http.js';
 import {
-  requirePerm, assertBoard, boardAccess, boardCtx, visibleBoardIds, inList, isAdmin, isSuper, boardAudience, loadUser,
+  requirePerm, assertBoard, boardAccess, boardCtx, visibleBoardIds, inList, isAdmin, isSuper, boardAudience, loadUser, can,
 } from '../lib/access.js';
 import { audit, notify } from '../lib/events.js';
 import { sendTo } from '../lib/realtime.js';
@@ -78,7 +78,7 @@ export function register(r) {
     const [bSql, bp] = inList(await visibleBoardIds(ctx.user));
     const cid = ctx.query.company_id;
     return await all(
-      `SELECT b.id, b.title, b.description, b.background, b.workspace_id, b.project_id, w.name AS unit_name, w.company_id,
+      `SELECT b.id, b.title, b.description, b.background, b.cover_url, b.workspace_id, b.project_id, w.name AS unit_name, w.company_id,
               c.code AS company_code, c.name AS company_name, pr.title AS project_title,
               (SELECT COUNT(*) FROM az_card k WHERE k.board_id = b.id AND k.archived = 0 AND k.list_id IS NOT NULL) AS card_count
          FROM az_board b JOIN az_workspace w ON w.id = b.workspace_id JOIN az_company c ON c.id = w.company_id
@@ -227,7 +227,7 @@ export function register(r) {
       id, title: str(body.title, 'Task title', { max: 300 }), description: body.description || null, position: pos,
       due_date: body.due_date || null, start_date: body.start_date || null, list_id: l.id, board_id: b.id, project_id: b.project_id || null,
       assignee_id: body.assignee_id || null, created_by: ctx.user.id, priority: oneOf(body.priority, 'priority', PRIORITIES, 'medium'),
-      labels: Array.isArray(body.labels) ? body.labels : [], cover_url: body.cover_url || null, is_template: body.is_template ? 1 : 0,
+      labels: Array.isArray(body.labels) ? body.labels : [], cover_url: can(ctx.user, 'cover.manage') ? body.cover_url || null : null, is_template: body.is_template ? 1 : 0,
       estimate_hours: body.estimate_hours ?? null, completed_at: l.is_done_list ? t : null, archived: 0, created_at: t, updated_at: t,
     });
     const card = await get('SELECT * FROM az_card WHERE id = ?', id);
@@ -263,7 +263,11 @@ export function register(r) {
     const { card, ctx: b } = await assertCard(ctx.user, ctx.params.id, 'edit');
     const body = ctx.body; const patch = {};
     if (body.title !== undefined) patch.title = str(body.title, 'Task title', { max: 300 });
-    for (const k of ['description', 'due_date', 'start_date', 'cover_url']) if (body[k] !== undefined) patch[k] = body[k] || null;
+    for (const k of ['description', 'due_date', 'start_date']) if (body[k] !== undefined) patch[k] = body[k] || null;
+    if (body.cover_url !== undefined) {
+      if (!can(ctx.user, 'cover.manage')) throw forbidden('Task covers need the "cover.manage" permission (e.g. the sales_marketing role)');
+      patch.cover_url = body.cover_url || null;
+    }
     if (body.assignee_id !== undefined) patch.assignee_id = body.assignee_id || null;
     if (body.priority !== undefined) patch.priority = oneOf(body.priority, 'priority', PRIORITIES, 'medium');
     if (body.labels !== undefined) patch.labels = Array.isArray(body.labels) ? body.labels : [];

@@ -97,6 +97,8 @@ export async function createPostgresAdapter(url) {
         await client.query('SELECT pg_advisory_xact_lock(727274001)');
         await client.query(sql);
         await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TEXT');
+        await client.query('ALTER TABLE az_workspace ADD COLUMN IF NOT EXISTS cover_url TEXT');
+        await client.query('ALTER TABLE az_board ADD COLUMN IF NOT EXISTS cover_url TEXT');
         await client.query(versioning);
         // number existing documents + baseline history for existing rows (bulk mode: no new versions)
         await client.query("SELECT set_config('wfh.bulk', '1', true)");

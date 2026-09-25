@@ -8,12 +8,13 @@ import { navigate, setQuery, Link } from '../lib/router.jsx';
 import { Avatar, AvatarStack, Spinner, ErrorBox, InlineEdit, Popover, Modal, AgeChip, useConfirm, Empty, PriorityPill, TimeAgo } from '../components/ui.jsx';
 import { CardModal } from '../components/CardModal.jsx';
 import { useRetirePrompt, withReason, HistoryModal } from '../components/VersionHistory.jsx';
+import { CoverModal, useCoverRights } from '../components/CoverPicker.jsx';
 import { ChannelView } from '../components/Chat.jsx';
 import { bgStyle, BOARD_BACKGROUNDS } from '../components/CreateModal.jsx';
 import { cls, fmtDate, dueStatus, ageDays, PRIORITY_COLORS } from '../lib/format.js';
 import {
   IInbox, ICalendar, IBoard, ISwitch, IPlus, IX, IMore, IEye, IDesc, IComment, IClip, ICheckSquare, IClock, IFilter, IShare, IStar,
-  IChat, IFile, ITable, ITrash, IEdit, ILeft, IRight, ISparkles, IUserPlus, IChart, IArchive,
+  IChat, IFile, ITable, ITrash, IEdit, ILeft, IRight, ISparkles, IUserPlus, IChart, IArchive, IImage,
 } from '../components/icons.js';
 
 // ---------------------------------------------------------------- drag & drop (pointer events, works on touch)
@@ -149,6 +150,8 @@ export default function BoardPage({ params, query }) {
   const [confirm, confirmNode] = useConfirm();
   const [askRetire, retireNode] = useRetirePrompt();
   const [history, setHistory] = useState(null); // { entity, id }
+  const [coverEdit, setCoverEdit] = useState(false);
+  const coverRights = useCoverRights();
   const scrollRef = useRef(null);
   const reloadTimer = useRef(null);
 
@@ -271,6 +274,7 @@ export default function BoardPage({ params, query }) {
                   <div className="muted small pad-x">Your access: <b>{access.role}</b></div>
                   {can('report.view') && <Link to="/dashboard" className="menu-item" onClick={close}><IChart /> Dashboard</Link>}
                   {access.canManage && <BackgroundMenu board={board} onPick={async (bg) => { await PATCH(`/api/boards/${boardId}`, { background: bg }); load(); close(); }} />}
+                  {coverRights.board && <button className="menu-item" onClick={() => { close(); setCoverEdit(true); }}><IImage /> Board cover image…</button>}
                   <button className="menu-item" onClick={() => { close(); setHistory({ entity: 'board', id: boardId }); }}><IClock /> Board version history</button>
                   {access.canManage && <button className="menu-item danger" onClick={async () => {
                     close();
@@ -341,6 +345,7 @@ export default function BoardPage({ params, query }) {
       {confirmNode}
       {retireNode}
       {history && <HistoryModal entity={history.entity} id={history.id} onClose={() => setHistory(null)} />}
+      {coverEdit && <CoverModal entity="board" id={boardId} url={board.cover_url} title={board.title} onClose={() => setCoverEdit(false)} onSaved={load} />}
     </div>
   );
 }
@@ -374,7 +379,7 @@ function SwitchBoards({ current }) {
           {!data && <Spinner />}
           {data?.map((b) => (
             <button key={b.id} className={cls('menu-item rich', b.id === current && 'on')} onClick={() => { close(); navigate(`/board/${b.id}`); }}>
-              <span className="board-swatch" style={bgStyle(b.background)} /><span><strong>{b.title}</strong><small>{b.company_code} · {b.unit_name} · {b.card_count} tasks</small></span>
+              <span className="board-swatch" style={bgStyle(b.cover_url || b.background)} /><span><strong>{b.title}</strong><small>{b.company_code} · {b.unit_name} · {b.card_count} tasks</small></span>
             </button>
           ))}
         </div>

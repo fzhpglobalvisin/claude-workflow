@@ -1,7 +1,7 @@
 // Task detail service — subtasks, requirements (text / PDF / media / link), Drive attachments, comments.
 import { get, all, run, insert, update, uuid, now } from '../db/index.js';
 import { bad, notFound, forbidden, str, oneOf } from '../lib/http.js';
-import { isAdmin } from '../lib/access.js';
+import { isAdmin, can } from '../lib/access.js';
 import { audit, notify } from '../lib/events.js';
 import { parseDrive, guessType, parseMentions } from '../lib/chatcore.js';
 import { assertCard, boardChanged } from './boards.js';
@@ -113,7 +113,7 @@ export function register(r) {
       created_at: now(), updated_at: now(),
     });
     await logTask(ctx.user, 'attachment.added', card, b, 'attachment', a.id, { name, drive: d.is_drive });
-    if (ctx.body.make_cover && d.drive_thumbnail_link) await update('az_card', card.id, { cover_url: d.drive_thumbnail_link });
+    if (ctx.body.make_cover && d.drive_thumbnail_link && can(ctx.user, 'cover.manage')) await update('az_card', card.id, { cover_url: d.drive_thumbnail_link });
     if (b) await boardChanged(b.id, 'card', { cardId: card.id });
     return { ...a, is_drive: d.is_drive };
   });

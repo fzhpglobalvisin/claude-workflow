@@ -9,6 +9,7 @@ import { RichText } from '../components/RichText.jsx';
 import { IBoard, IProject, IPlus, IChat, IChart, ILayers, IUsers, IX, IAt, ITodo, IBuilding, IClock, IArchive } from '../components/icons.js';
 import { cls, fmtDate, dueStatus, ageDays } from '../lib/format.js';
 import { HistoryModal, useRetirePrompt, withReason, docDate } from '../components/VersionHistory.jsx';
+import { CoverButton, coverStyle } from '../components/CoverPicker.jsx';
 
 export default function CompanyHome({ query }) {
   const { companyId, setCompanyId, can, isAdmin, toast } = useApp();
@@ -37,6 +38,8 @@ export default function CompanyHome({ query }) {
   if (error) return <div className="page"><ErrorBox error={error} onRetry={reload} /></div>;
   const c = data.company;
   const unitName = (id) => units.find((u) => u.id === id)?.name;
+  const selUnit = unit !== 'all' ? units.find((u) => u.id === unit) : null;
+  const boardsIn = (uid) => (data.boards || []).filter((b) => b.workspace_id === uid).length;
 
   const saveProject = async (p, patch) => { try { await PATCH(`/api/projects/${p.id}`, { ...patch, base_version: p.version_no }); reload(); } catch (e) { toast(e.message, 'error'); reload(); } };
   const retireProject = async (p) => {
@@ -75,6 +78,11 @@ export default function CompanyHome({ query }) {
       </aside>
 
       <div className="home-main">
+        {selUnit?.cover_url && (
+          <div className="unit-banner" style={coverStyle(selUnit.cover_url)}>
+            <CoverButton entity="unit" id={selUnit.id} url={selUnit.cover_url} title={selUnit.name} label="Change cover" onSaved={reload} />
+          </div>
+        )}
         <div className="page-head">
           <div>
             <div className="crumbs"><Link to="/">Companies</Link> / {c.code}{unit !== 'all' && <> / {unitName(unit)}</>}</div>
@@ -83,6 +91,7 @@ export default function CompanyHome({ query }) {
           </div>
           <div className="head-actions">
             <button className="btn" onClick={() => setHistory(unit === 'all' ? { entity: 'company', id: c.id } : { entity: 'unit', id: unit })} title="Version history"><IClock /> v{unit === 'all' ? c.version_no : units.find((u) => u.id === unit)?.version_no}</button>
+            {selUnit && !selUnit.cover_url && <CoverButton entity="unit" id={selUnit.id} url={null} title={selUnit.name} label="Unit cover" className="plain" onSaved={reload} />}
             {unit !== 'all' && isAdmin && <button className="btn" onClick={() => setMembers(units.find((u) => u.id === unit))}><IUsers /> Unit members</button>}
             {unit !== 'all' && isAdmin && can('unit.manage') && <button className="btn warn" onClick={() => retireUnit(units.find((u) => u.id === unit))} title="Retire unit"><IArchive /></button>}
             {can('project.manage') && <button className="btn" onClick={() => setCreate({ kind: 'project', preset: { workspace_id: unit !== 'all' ? unit : undefined } })}><IProject /> New project</button>}
@@ -100,11 +109,29 @@ export default function CompanyHome({ query }) {
           </div>
         )}
 
+        {unit === 'all' && units.length > 0 && (
+          <section>
+            <h2 className="sec-title"><IBuilding /> Units <span className="muted">{units.length}</span></h2>
+            <div className="unit-tiles">
+              {units.map((u) => (
+                <div key={u.id} className="unit-tile" role="button" tabIndex={0} style={coverStyle(u.cover_url)}
+                  onClick={() => setUnit(u.id)} onKeyDown={(e) => e.key === 'Enter' && setUnit(u.id)}>
+                  <span className="ut-type">{u.type}</span>
+                  <CoverButton entity="unit" id={u.id} url={u.cover_url} title={u.name} className="corner" onSaved={reload} />
+                  <span className="ut-name">{u.name}</span>
+                  <span className="ut-meta">{boardsIn(u.id)} boards · {u.member_count} members</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section>
           <h2 className="sec-title"><IBoard /> Boards <span className="muted">{boards.length}</span></h2>
           <div className="board-tiles">
             {boards.map((b) => (
-              <Link key={b.id} to={`/board/${b.id}`} className="board-tile" style={bgStyle(b.background)}>
+              <Link key={b.id} to={`/board/${b.id}`} className="board-tile" style={bgStyle(b.cover_url || b.background)}>
+                <CoverButton entity="board" id={b.id} url={b.cover_url} title={b.title} className="corner" onSaved={reload} />
                 <span className="bt-title">{b.title}</span>
                 <span className="bt-meta">{unitName(b.workspace_id)} · {b.card_count} tasks · {b.member_count} members</span>
               </Link>

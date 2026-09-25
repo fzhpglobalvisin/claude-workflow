@@ -50,6 +50,8 @@ export function openSync(file) {
       // additive column migrations for databases created by older versions
       const has = (t, c) => db.prepare(`PRAGMA table_info(${t})`).all().some((x) => x.name === c);
       if (!has('users', 'last_seen_at')) db.exec('ALTER TABLE users ADD COLUMN last_seen_at TEXT');
+      if (!has('az_workspace', 'cover_url')) db.exec('ALTER TABLE az_workspace ADD COLUMN cover_url TEXT');
+      if (!has('az_board', 'cover_url')) db.exec('ALTER TABLE az_board ADD COLUMN cover_url TEXT');
       applyVersioning(db, has);
     },
     /** column list per versioned table (used by the baseline step) */

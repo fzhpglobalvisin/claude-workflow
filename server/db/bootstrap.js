@@ -1,7 +1,7 @@
 // Minimal first-run data for a PRODUCTION database (no demo content):
 // the permission catalogue, the five standard roles and one Superadmin account.
 //   ADMIN_USERNAME (default admin) / ADMIN_PASSWORD (default admin123 — change it immediately)
-import { insert, get, uuid, now, withChange, tx } from './index.js';
+import { insert, get, all, uuid, now, withChange, tx } from './index.js';
 import { PERMISSIONS, ROLES } from './seed.js';
 import { hashPassword } from '../lib/security.js';
 
@@ -26,4 +26,34 @@ export async function bootstrapEmpty() {
     console.log(`• Empty production database — created roles, permissions and the Superadmin "${username}"${process.env.ADMIN_PASSWORD ? '' : ' (password admin123 — change it now)'}`);
     return true;
   }));
+}
+
+/**
+ * Keeps the permission catalogue and standard roles of an EXISTING database in step with the
+ * code (e.g. `cover.manage` and the `sales_marketing` role added in v2.2). Only adds what is
+ * missing — never changes grants an administrator has already configured. Idempotent.
+ */
+export async function ensureRbacCatalogue() {
+  const perms = Object.fromEntries((await all('SELECT id, key FROM az_permission')).map((p) => [p.key, p.id]));
+  const roles = Object.fromEntries((await all('SELECT id, name FROM az_role')).map((r) => [r.name, r.id]));
+  const missingPerms = Object.keys(PERMISSIONS).filter((k) => !perms[k]);
+  const missingRoles = Object.keys(ROLES).filter((r) => !roles[r]);
+  if (!missingPerms.length && !missingRoles.length) return { permissions: 0, roles: 0 };
+  await withChange({ actorId: 'system:catalogue', note: 'Permission catalogue update' }, () => tx(async () => {
+    const t = now();
+    for (const key of missingPerms) {
+      perms[key] = uuid();
+      await insert('az_permission', { id: perms[key], key, description: PERMISSIONS[key], created_at: t });
+      // the super_admin role lists every permission
+      if (roles.super_admin) await insert('az_role_permission', { role_id: roles.super_admin, permission_id: perms[key] });
+    }
+    for (const name of missingRoles) {
+      const [description, keys] = ROLES[name];
+      const id = uuid();
+      await insert('az_role', { id, name, description, created_at: t, updated_at: t });
+      for (const k of keys) if (perms[k]) await insert('az_role_permission', { role_id: id, permission_id: perms[k] });
+    }
+  }));
+  if (missingPerms.length || missingRoles.length) console.log(`• RBAC catalogue: added ${missingPerms.join(', ') || 'no permissions'}; roles ${missingRoles.join(', ') || 'none'}`);
+  return { permissions: missingPerms.length, roles: missingRoles.length };
 }

@@ -4,6 +4,7 @@ import { bad, notFound, forbidden, str, oneOf, HttpError } from '../lib/http.js'
 import { requirePerm, visibleCompanyIds, visibleWorkspaceIds, visibleBoardIds, isAdmin, isSuper, inList, requireSuper } from '../lib/access.js';
 import { audit } from '../lib/events.js';
 import { retire, upsertMembership, endMembership } from '../lib/mdm.js';
+import { normalizeCoverUrl } from './covers.js';
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -48,7 +49,7 @@ export function register(r) {
     if (await get('SELECT 1 FROM az_company WHERE code = ?', code)) throw new HttpError(409, 'Company code already exists (codes are permanent and never reused, even after retirement)');
     const c = await insert('az_company', {
       id: uuid(), name: str(b.name, 'Name', { max: 120 }), code, group_id: b.group_id || (await get('SELECT id FROM az_group LIMIT 1'))?.id || null,
-      description: b.description || null, image_url: b.image_url || null, accent: b.accent || null, created_at: now(), updated_at: now(),
+      description: b.description || null, image_url: isSuper(ctx.user) && b.image_url ? normalizeCoverUrl(b.image_url) : null, accent: b.accent || null, created_at: now(), updated_at: now(),
     });
     // every company starts with a General unit + #general channel
     const w = await insert('az_workspace', { id: uuid(), name: 'General', slug: 'general', type: 'unit', company_id: c.id, invite_code: code + '-GEN', created_at: now(), updated_at: now() });
@@ -63,6 +64,9 @@ export function register(r) {
     const c = await assertCompany(ctx.user, ctx.params.id);
     const b = ctx.body; const patch = { updated_at: now() };
     for (const k of ['name', 'description', 'image_url', 'accent']) if (b[k] !== undefined) patch[k] = b[k] || null;
+    // the company cover image is Superadmin-governed (same rule as PUT /api/covers/company/:id)
+    if (patch.image_url !== undefined && (patch.image_url || null) !== (c.image_url || null) && !isSuper(ctx.user)) throw forbidden('Company cover images are set by the Superadmin');
+    if (patch.image_url) patch.image_url = normalizeCoverUrl(patch.image_url);
     if (b.code && String(b.code).toUpperCase() !== c.code) throw new HttpError(409, 'The company code is a permanent business key — create a new company instead');
     if (patch.name === null) throw bad('Name required');
     await update('az_company', c.id, { ...patch, _expect_version: b.base_version });

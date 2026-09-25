@@ -34,7 +34,7 @@ async function test(name, fn) {
 console.log('\nWorkflow Hub environment tests\n');
 await test('empty production database → roles + Superadmin only (no demo data)', async () => {
   const r = initApp({ APP_ENV: 'production' });
-  assert.equal(r.ok, true, r.error); assert.equal(r.users, 1); assert.equal(r.companies, 0); assert.equal(r.roles, 5); assert.equal(r.env, 'production');
+  assert.equal(r.ok, true, r.error); assert.equal(r.users, 1); assert.equal(r.companies, 0); assert.equal(r.roles, 6); assert.equal(r.env, 'production');
 });
 await test('development process refuses a production-tagged database', async () => {
   const r = initApp({ APP_ENV: 'development' });
